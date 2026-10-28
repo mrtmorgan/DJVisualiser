@@ -82,7 +82,9 @@ python -m quincy_vis queue --jobs examples/jobs.example.json
 python -m quincy_vis queue --jobs examples/jobs.example.json --force   # re-render finished outputs
 ```
 
-Each job takes `audio`, `preset` and `out`, with optional `width`, `height`, `fps`, `start`, `duration`,
+Each job takes `audio`, `out`, and either `genre` or `preset` (not both). A `genre` such as `afro_house`
+picks its preset from `presets/genres/genres.json`; the list of genres and their families is in
+`docs/genre_styles.md`. Optional fields are `width`, `height`, `fps`, `start`, `duration`,
 `seed` and `crf`. Relative `audio` and `preset` paths are resolved against the jobs file. `out` can be
 any writable path, including `/Volumes/<drive>/...`.
 

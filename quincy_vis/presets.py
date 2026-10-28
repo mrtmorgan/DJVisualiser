@@ -28,6 +28,21 @@ def load_preset(path, seed=None):
     return validate_preset(data, seed=seed)
 
 
+GENRE_MAP = Path(__file__).resolve().parents[1] / "presets" / "genres" / "genres.json"
+
+
+def resolve_genre(genre, map_path=GENRE_MAP):
+    """Return the preset path for a genre name, using the provisional genre map."""
+    try:
+        mapping = json.loads(Path(map_path).read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise PresetError(f"Cannot read the genre map {str(map_path)!r}: {error}") from error
+    known = mapping["genres"]
+    if genre not in known:
+        raise PresetError(f"Unknown genre {genre!r}. Known genres: {', '.join(sorted(known))}.")
+    return (Path(map_path).parent / known[genre]).resolve()
+
+
 def validate_preset(data, seed=None):
     errors = []
     if data.get("schema_version") != SCHEMA_VERSION:

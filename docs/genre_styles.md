@@ -19,3 +19,10 @@ Palettes are directions, not final colours. Tune by eye on real mixes before loc
 - Genre is assumed to be set per mix. Mixes that change genre partway would need timestamped segments.
 - Mixed sets are assumed to use one look for the whole mix until a crossfade is needed.
 - Reference images: the three poster screenshots and the Pinterest board stills (motion not captured).
+
+## Implementation
+
+- Each genre has a preset in `presets/genres/`, generated from the warm haze template with the palette,
+  grain and response values above. Their values are provisional until tuned on real mixes.
+- `presets/genres/genres.json` maps genre names to preset files. Unknown genres are rejected with the list of known ones.
+- Queue jobs take `genre` or `preset`, not both.

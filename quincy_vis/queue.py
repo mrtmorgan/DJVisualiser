@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .export import render_video
+from .presets import resolve_genre
 
 DEFAULTS = {"width": 1920, "height": 1080, "fps": 30, "start": 0.0, "duration": None, "seed": None, "crf": 18}
 
@@ -22,12 +23,17 @@ def load_jobs(jobs_path):
     jobs = []
     for index, entry in enumerate(entries, start=1):
         job = {**DEFAULTS, **entry}
-        for key in ("audio", "preset", "out"):
+        for key in ("audio", "out"):
             if not job.get(key):
                 raise ValueError(f"Job {index} is missing '{key}'.")
+        if bool(job.get("genre")) == bool(job.get("preset")):
+            raise ValueError(f"Job {index} needs exactly one of 'genre' or 'preset'.")
+        if job.get("genre"):
+            job["preset"] = str(resolve_genre(job["genre"]))
         # Relative audio and preset paths are resolved against the jobs file, so the queue can move with its folder.
         job["audio"] = str((jobs_path.parent / job["audio"]).resolve()) if not Path(job["audio"]).is_absolute() else job["audio"]
-        job["preset"] = str((jobs_path.parent / job["preset"]).resolve()) if not Path(job["preset"]).is_absolute() else job["preset"]
+        if not Path(job["preset"]).is_absolute():
+            job["preset"] = str((jobs_path.parent / job["preset"]).resolve())
         job["out"] = str(Path(job["out"]).expanduser())
         job["index"] = index
         jobs.append(job)

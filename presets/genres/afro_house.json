@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "afro_house",
+  "name": "Afro house",
+  "description": "Provisional Earth pulse look for Afro house. Tune by eye on real mixes.",
+  "seed": 2102,
+  "palette": {
+    "stops": [
+      [
+        0,
+        "#0d0603"
+      ],
+      [
+        0.3,
+        "#3a1f0e"
+      ],
+      [
+        0.55,
+        "#7a4418"
+      ],
+      [
+        0.8,
+        "#b5772a"
+      ],
+      [
+        1,
+        "#e6c78a"
+      ]
+    ]
+  },
+  "field": {
+    "scale": 0.9,
+    "warp_scale": 0.6,
+    "base_warp": 0.22,
+    "drift_speed": 0.022,
+    "octaves": 3,
+    "softness": 0.45,
+    "texture_base": 0.03,
+    "contour_frequency": 7.0,
+    "contrast": 1.4
+  },
+  "grain": {
+    "amount": 0.025
+  },
+  "response": {
+    "expansion": {
+      "feature": "bass",
+      "mode": "follow",
+      "attack_s": 0.06,
+      "release_s": 0.7,
+      "gain": 0.08,
+      "max": 0.1
+    },
+    "warp": {
+      "feature": "rms",
+      "mode": "follow",
+      "attack_s": 0.5,
+      "release_s": 1.5,
+      "gain": 0.08,
+      "max": 0.1
+    },
+    "contour": {
+      "feature": "mid",
+      "mode": "follow",
+      "attack_s": 0.15,
+      "release_s": 0.8,
+      "gain": 0.12,
+      "max": 0.15
+    },
+    "texture": {
+      "feature": "high",
+      "mode": "follow",
+      "attack_s": 0.05,
+      "release_s": 0.3,
+      "gain": 0.04,
+      "max": 0.08
+    },
+    "ripple": {
+      "feature": "onset",
+      "mode": "impulse",
+      "threshold": 0.6,
+      "refractory_s": 0.5,
+      "decay_s": 0.4,
+      "gain": 0.05,
+      "max": 0.06
+    },
+    "contrast": {
+      "feature": "rms",
+      "mode": "follow",
+      "attack_s": 8.0,
+      "release_s": 20.0,
+      "gain": 0.5,
+      "max": 0.4
+    }
+  }
+}

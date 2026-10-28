@@ -1,0 +1,12 @@
+{
+  "_note": "Provisional genre-to-preset map. See docs/genre_styles.md. Paths are relative to this file.",
+  "genres": {
+    "afrobeats": "afrobeats.json",
+    "afro_house": "afro_house.json",
+    "amapiano": "amapiano.json",
+    "dancehall": "dancehall.json",
+    "hip_hop": "hip_hop.json",
+    "rnb_open_format": "rnb_open_format.json"
+  },
+  "fallback": "../warm_haze.json"
+}

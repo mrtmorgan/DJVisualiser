@@ -14,7 +14,7 @@ from quincy_vis.analysis import (
 )
 from quincy_vis.audio import iter_mono_blocks
 from quincy_vis.export import render_video
-from quincy_vis.presets import PresetError, load_preset, validate_preset
+from quincy_vis.presets import PresetError, load_preset, resolve_genre, validate_preset
 from quincy_vis.renderer import Renderer, _hash3, interp_matrix, palette_lut, vnoise
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,6 +191,21 @@ class ExportTests(unittest.TestCase):
         self.assertFalse((self.dir / "out.partial.mp4").exists())
         self.assertAlmostEqual(summary["duration"], 3.0, delta=0.15)
         self.assertEqual(summary["audio_codec"], "aac")
+
+
+class GenreTests(unittest.TestCase):
+    def test_every_genre_maps_to_a_valid_preset(self):
+        mapping = json.loads((ROOT / "presets" / "genres" / "genres.json").read_text())
+        self.assertEqual(len(mapping["genres"]), 6)
+        for genre in mapping["genres"]:
+            path = resolve_genre(genre)
+            self.assertTrue(path.exists(), genre)
+            self.assertEqual(load_preset(path)["id"], genre)
+
+    def test_unknown_genre_lists_the_known_ones(self):
+        with self.assertRaises(PresetError) as context:
+            resolve_genre("gqom")
+        self.assertIn("afro_house", str(context.exception))
 
 
 class QueueTests(unittest.TestCase):
