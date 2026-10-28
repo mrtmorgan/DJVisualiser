@@ -1,0 +1,2 @@
+# Python dependency: numpy only. ffmpeg and ffprobe must be on PATH (system install, not pip).
+numpy>=1.26

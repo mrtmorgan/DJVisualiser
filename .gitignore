@@ -1,0 +1,4 @@
+cache/
+outputs/
+*.partial.mp4
+__pycache__/
