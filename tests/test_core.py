@@ -193,5 +193,36 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(summary["audio_codec"], "aac")
 
 
+class QueueTests(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_queue_skips_finished_outputs_and_continues_after_failures(self):
+        from quincy_vis.queue import run_queue
+        wav = self.dir / "mix.wav"
+        write_kick_wav(wav, seconds=2.0)
+        done = self.dir / "done.mp4"
+        done.write_bytes(b"already rendered")
+        jobs = self.dir / "jobs.json"
+        jobs.write_text(json.dumps({"jobs": [
+            {"audio": "mix.wav", "preset": str(PRESET), "out": str(done), "width": 320, "height": 180, "fps": 10},
+            {"audio": "missing.wav", "preset": str(PRESET), "out": str(self.dir / "bad.mp4"), "width": 320, "height": 180},
+            {"audio": "mix.wav", "preset": str(PRESET), "out": str(self.dir / "good.mp4"), "width": 320, "height": 180, "fps": 10},
+        ]}))
+        results = run_queue(jobs, cache_dir=self.dir / "cache", log=lambda *_: None)
+        self.assertEqual([r["status"] for r in results], ["skipped (output exists)", "failed", "done"])
+        self.assertEqual(done.read_bytes(), b"already rendered")
+        self.assertTrue((self.dir / "good.mp4").exists())
+        self.assertTrue((self.dir / "jobs.report.json").exists())
+
+    def test_unplugged_volume_is_refused_rather_than_created(self):
+        from quincy_vis.queue import check_output_location
+        with self.assertRaises(OSError):
+            check_output_location("/Volumes/QuincyNoSuchDrive/exports/mix.mp4")
+
+
 if __name__ == "__main__":
     unittest.main()

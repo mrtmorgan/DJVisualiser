@@ -15,6 +15,8 @@ from .analysis import follow, impulse
 from .presets import CHANNELS
 
 FIELD_SIZE = (480, 270)
+WARP_SIZE = (120, 68)  # the domain warp is smooth, so it is computed on a coarser grid
+GRAIN_TILE = 1024
 LUT_SIZE = 1024
 
 
@@ -117,6 +119,18 @@ class Renderer:
         self.radius = np.sqrt(self.X ** 2 + self.Y ** 2)
         self.up_x = interp_matrix(width, field_w).T.copy()
         self.up_y = interp_matrix(height, field_h)
+
+        warp_w, warp_h = WARP_SIZE
+        wxs = np.linspace(-aspect, aspect, warp_w, dtype=np.float32)
+        wys = np.linspace(-1, 1, warp_h, dtype=np.float32)
+        self.warp_X, self.warp_Y = np.meshgrid(wxs, wys)
+        self.warp_up_x = interp_matrix(field_w, warp_w).T.copy()
+        self.warp_up_y = interp_matrix(field_h, warp_h)
+
+        # One seeded grain tile, read at a different offset each frame. Cheap, deterministic, no per-frame RNG.
+        self.grain_tile = np.random.default_rng(self.seed).standard_normal(
+            (GRAIN_TILE, GRAIN_TILE), dtype=np.float32
+        )
         self.lut = palette_lut(preset["palette"]["stops"])
         self.envelopes = {
             name: _channel_envelope(spec, features) for name, spec in preset["response"].items()
@@ -139,8 +153,10 @@ class Renderer:
         gain = 0.5 - 0.25 * p["softness"]
 
         warp = p["base_warp"] + c["warp"]
-        wx = fbm(self.X * warp_scale, self.Y * warp_scale, z, 2, self.seed + 1, 0.5)
-        wy = fbm(self.X * warp_scale + 7.3, self.Y * warp_scale - 3.1, z + 11.0, 2, self.seed + 2, 0.5)
+        wx = fbm(self.warp_X * warp_scale, self.warp_Y * warp_scale, z, 2, self.seed + 1, 0.5)
+        wy = fbm(self.warp_X * warp_scale + 7.3, self.warp_Y * warp_scale - 3.1, z + 11.0, 2, self.seed + 2, 0.5)
+        wx = self.warp_up_y @ wx @ self.warp_up_x
+        wy = self.warp_up_y @ wy @ self.warp_up_x
         keep = 1 - c["expansion"]
         xw = (self.X + warp * wx) * keep
         yw = (self.Y + warp * wy) * keep
@@ -160,14 +176,19 @@ class Renderer:
         """Return one frame as uint8 RGB at the renderer's output size for absolute time t (seconds)."""
         frame_id = int(round(t * self.fps))
         field = self.field(t)
-        full = self.up_y @ field @ self.up_x
-        index = np.rint(np.clip(full, 0, 1) * (LUT_SIZE - 1)).astype(np.intp)
-        rgb = self.lut[index]
+        # Colour is applied on the field grid and the RGB result is upsampled, which is cheaper than
+        # upsampling the scalar and gathering colours at full output resolution.
+        index = np.rint(np.clip(field, 0, 1) * (LUT_SIZE - 1)).astype(np.intp)
+        field_rgb = self.lut[index]
+        rgb = np.stack([self.up_y @ field_rgb[..., c] @ self.up_x for c in range(3)], axis=-1)
 
         amount = float(self.preset["grain"]["amount"])
         if amount > 0:
-            # Grain is seeded by absolute frame number, so a preview and the full export agree at the same time.
-            rng = np.random.default_rng([self.seed, frame_id])
-            noise = rng.standard_normal((self.height, self.width), dtype=np.float32)
+            # The grain offset is a function of the absolute frame number, so a preview and the export agree.
+            offset_y = (frame_id * 7919) % GRAIN_TILE
+            offset_x = (frame_id * 104729) % GRAIN_TILE
+            rows = (offset_y + np.arange(self.height)) % GRAIN_TILE
+            cols = (offset_x + np.arange(self.width)) % GRAIN_TILE
+            noise = self.grain_tile[rows][:, cols]
             rgb += (amount * 255.0) * noise[..., None]
         return np.clip(rgb + 0.5, 0, 255).astype(np.uint8)

@@ -1,0 +1,22 @@
+{
+  "jobs": [
+    {
+      "audio": "../../mixes/quincy_mix_01.wav",
+      "preset": "../presets/warm_haze.json",
+      "out": "/Volumes/MixDrive/Quincy/visuals/quincy_mix_01_warm_1080p.mp4",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "crf": 18
+    },
+    {
+      "audio": "../../mixes/quincy_mix_02.wav",
+      "preset": "../presets/warm_haze.json",
+      "out": "~/Movies/quincy/quincy_mix_02_warm_1080p.mp4",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "seed": 2041
+    }
+  ]
+}

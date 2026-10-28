@@ -7,6 +7,7 @@ from pathlib import Path
 from .export import render_still, render_video
 from .analysis import ensure_analysis
 from .presets import PresetError
+from .queue import run_queue
 
 DEFAULT_CACHE = Path(__file__).resolve().parents[1] / "cache"
 
@@ -41,6 +42,11 @@ def build_parser():
     render.add_argument("--duration", type=float, help="Length to render; default is the rest of the mix")
     render.add_argument("--workers", type=int, help="Render processes; default is CPU count minus one")
     render.add_argument("--crf", type=int, default=18, help="x264 quality (lower is better, 18 is visually near-lossless)")
+
+    queue = commands.add_parser("queue", help="Render a list of jobs one after another, each to its own output path")
+    queue.add_argument("--jobs", type=Path, required=True, help="JSON file listing the jobs (see README)")
+    queue.add_argument("--force", action="store_true", help="Re-render jobs whose output already exists")
+    queue.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE)
     return parser
 
 
@@ -54,6 +60,10 @@ def main(argv=None):
             path = render_still(args.audio, args.preset, args.time, args.out, width=args.width,
                                 height=args.height, fps=args.fps, seed=args.seed, cache_dir=args.cache_dir)
             print(f"Wrote {path}")
+        elif args.command == "queue":
+            results = run_queue(args.jobs, force=args.force, cache_dir=args.cache_dir)
+            if any(r["status"] in ("failed", "cancelled") for r in results):
+                return 1
         else:
             render_video(args.audio, args.preset, args.out, width=args.width, height=args.height,
                          fps=args.fps, start=args.start, duration=args.duration, workers=args.workers,

@@ -73,6 +73,27 @@ Each curve is normalised by its own 5th and 95th percentiles over the whole file
 smoothing is set per channel in the preset. Analysis for a file is cached under `cache/`, keyed by
 path, size, modification time and analysis version.
 
+## Render queue (for batches and external drives)
+
+Write a JSON list of jobs and run it. Jobs run one after another, each to its own output path:
+
+```bash
+python -m quincy_vis queue --jobs examples/jobs.example.json
+python -m quincy_vis queue --jobs examples/jobs.example.json --force   # re-render finished outputs
+```
+
+Each job takes `audio`, `preset` and `out`, with optional `width`, `height`, `fps`, `start`, `duration`,
+`seed` and `crf`. Relative `audio` and `preset` paths are resolved against the jobs file. `out` can be
+any writable path, including `/Volumes/<drive>/...`.
+
+- A job whose output already exists is skipped, so an interrupted queue can be restarted safely.
+- A failed job is recorded and the queue continues. A cancelled job leaves `*.partial.mp4` and stops the queue.
+- If a `/Volumes/<drive>` is not connected, that job fails with a message instead of writing to the internal disk.
+- A `<jobs>.report.json` next to the jobs file records the status, time and size of each job.
+
+The live Metal preview and the Swift renderer are planned but not built. The queue is the path that
+produces finished files now.
+
 ## Presets
 
 `presets/warm_haze.json` is the only preset. Its fields are documented by the code:
@@ -116,8 +137,9 @@ Both numbers come from the preset's grain level, so the grain level is the first
 
 - **Visual calibration is provisional.** The palette and grain were tuned by eye on three still frames
   against the three reference screenshots (see below). Nothing has been reviewed on a real mix yet.
-- **Speed.** About 0.26 s per 1080p frame on 3 workers. Options: lower the field grid, cache the
-  warp fields at lower resolution, or move the noise into a GPU shader (glslViewer or WebGL).
+- **Speed.** Now about 0.15 s per 1080p frame and 0.63 s per 4K frame on one core, measured after moving
+  the warp to a coarser grid, colour to the field grid and grain to a seeded tile. Further gains need the GPU
+  (Metal on the M1), which is planned but not built.
 - **File size.** Grain drives the bitrate. Options: lower grain, a higher CRF for delivery (test
   26–28 on YouTube-style footage), or a filtered grain that is less high-frequency.
 - **Preview and export** share the field grid, so the look matches across resolutions. Grain is a
